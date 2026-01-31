@@ -7,59 +7,48 @@ const app = express();
 app.use(express.json());
 puppeteer.use(StealthPlugin());
 
-app.get('/', (req, res) => res.send('API is Online!'));
+app.get('/', (req, res) => res.send('Render API is Live!'));
 
 app.post('/getlink', async (req, res) => {
     const { url } = req.body;
-    if (!url) return res.status(400).json({ error: "Terabox URL നൽകുക!" });
+    if (!url) return res.status(400).json({ error: "URL ആവശ്യമാണ്!" });
 
     let browser;
     try {
-        console.log("Launching Browser...");
         browser = await puppeteer.launch({
             headless: "new",
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
         });
 
         const page = await browser.newPage();
         
-        // 1. ടോക്കൺ ജനറേറ്റ് ചെയ്യുന്ന സൈറ്റിലേക്ക് പോകുന്നു
-        await page.goto('https://tboxdownloader.in/', { waitUntil: 'networkidle2' });
+        // ടോക്കൺ എടുക്കാനുള്ള സൈറ്റിലേക്ക് പോകുന്നു
+        await page.goto('https://tboxdownloader.in/', { waitUntil: 'networkidle2', timeout: 60000 });
 
-        // 2. Cloudflare ടോക്കൺ വരാൻ 5 സെക്കന്റ് കാക്കുന്നു
-        console.log("Waiting for Captcha Token...");
-        await new Promise(resolve => setTimeout(resolve, 6000));
+        // ക്യാപ്‌ച ലോഡ് ആകാൻ കാക്കുന്നു
+        await new Promise(resolve => setTimeout(resolve, 8000));
 
-        // 3. ടോക്കൺ എക്സ്ട്രാക്ട് ചെയ്യുന്നു
         const captchaToken = await page.evaluate(() => {
             return document.querySelector('[name="cf-turnstile-response"]')?.value || 
                    document.querySelector('#cf-turnstile-response')?.value;
         });
 
-        if (!captchaToken) {
-            throw new Error("Captcha Token കണ്ടുപിടിക്കാൻ കഴിഞ്ഞില്ല!");
-        }
+        if (!captchaToken) throw new Error("Captcha Token കണ്ടുപിടിക്കാൻ കഴിഞ്ഞില്ല!");
 
-        console.log("Token Found! Fetching Data...");
-
-        // 4. മെയിൻ API-ലേക്ക് റിക്വസ്റ്റ് അയക്കുന്നു
+        // മെയിൻ API-ലേക്ക് ഡാറ്റ അയക്കുന്നു
         const response = await axios.post('https://tbox-api-stable.subhodas5673.workers.dev/', {
             url: url,
             captchaToken: captchaToken
-        }, {
-            headers: { 'Content-Type': 'application/json' }
         });
 
         res.json(response.data);
 
     } catch (error) {
-        console.error("Error:", error.message);
         res.status(500).json({ error: error.message });
     } finally {
         if (browser) await browser.close();
     }
 });
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 10000; // Render uses 10000
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
-
