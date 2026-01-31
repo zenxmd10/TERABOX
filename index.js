@@ -15,20 +15,25 @@ app.all('/getlink', async (req, res) => {
 
     let browser;
     try {
+        console.log(`Processing: ${url}`);
         browser = await puppeteer.launch({
-            // Docker-ൽ ക്രോം ഇരിക്കുന്ന പാത്ത്
-            executablePath: '/usr/bin/google-chrome-stable',
+            // ഈ പാത്ത് ശ്രദ്ധിക്കുക
+            executablePath: '/usr/bin/google-chrome',
             headless: "new",
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
         });
 
         const page = await browser.newPage();
-        await page.goto('https://tboxdownloader.in/', { waitUntil: 'networkidle2' });
+        await page.goto('https://tboxdownloader.in/', { waitUntil: 'networkidle2', timeout: 60000 });
+        
         await new Promise(resolve => setTimeout(resolve, 10000));
 
         const captchaToken = await page.evaluate(() => {
-            return document.querySelector('[name="cf-turnstile-response"]')?.value;
+            return document.querySelector('[name="cf-turnstile-response"]')?.value || 
+                   document.querySelector('#cf-turnstile-response')?.value;
         });
+
+        if (!captchaToken) throw new Error("Captcha Token കണ്ടുപിടിക്കാൻ കഴിഞ്ഞില്ല!");
 
         const response = await axios.post('https://tbox-api-stable.subhodas5673.workers.dev/', {
             url: url,
