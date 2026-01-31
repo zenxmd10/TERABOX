@@ -1,5 +1,5 @@
 {
-  "name": "terabox-bypass-render",
+  "name": "terabox-bypass",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,7 @@
   "dependencies": {
     "axios": "^1.6.0",
     "express": "^4.18.2",
-    "puppeteer-core": "^21.5.0",
+    "puppeteer": "^21.5.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
